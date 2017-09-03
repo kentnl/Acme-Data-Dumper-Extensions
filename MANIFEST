@@ -1,0 +1,7 @@
+.gitignore
+Changes
+MANIFEST			This list of files
+Makefile.PL
+lib/Acme/Data/Dumper/Extensions.pm
+maint/eumm_author.pl
+maint/mkmanifest
