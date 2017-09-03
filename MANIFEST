@@ -5,3 +5,4 @@ Makefile.PL
 lib/Acme/Data/Dumper/Extensions.pm
 maint/eumm_author.pl
 maint/mkmanifest
+t/proof-of-concept.t

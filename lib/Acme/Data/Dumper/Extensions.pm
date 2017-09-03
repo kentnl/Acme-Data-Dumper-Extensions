@@ -10,6 +10,69 @@ our $VERSION = '0.001000';
 
 # AUTHORITY
 
+use Data::Dumper ();
+use Exporter     ();
+
+my $DD_Defaults;
+
+BEGIN {
+    $DD_Defaults = {
+        Bless     => q[bless],
+        Deepcopy  => 0,
+        Deparse   => 0,
+        Freezer   => q[],
+        Indent    => 2,
+        Maxdepth  => 0,
+        Pad       => q[],
+        Pair      => q[ => ],
+        Purity    => 0,
+        Purity    => 0,
+        Quotekeys => 1,
+        Sortkeys  => 0,
+        Terse     => 0,
+        Toaster   => q[],
+        Useperl   => 0,
+        Useqq     => 0,
+        Varname   => q[VAR],
+    };
+
+    $DD_Defaults->{Sparseseen} = 0    if eval { Data::Dumper->VERSION(2.136) };
+    $DD_Defaults->{Maxrecurse} = 1000 if eval { Data::Dumper->VERSION(2.153) };
+    $DD_Defaults->{Trailingcomma} = 0 if eval { Data::Dumper->VERSION(2.160) };
+}
+
+sub DD_Defaults {
+    { %$DD_Defaults }
+}
+
+our $_new_with_defaults = sub {
+    my ( $self, $user_defaults ) = @_;
+
+    my $instance = $self->new( [] );
+
+    # Initialise with system defaults
+    my $instance_defaults = { %{$DD_Defaults} };
+
+    # Validate and overwrite user defaults
+    for my $key ( sort keys %{ $user_defaults || {} } ) {
+        die "Unknown feature '$key'" unless exists $DD_Defaults->{$key};
+        $instance_defaults->{$key} = $user_defaults->{$key};
+    }
+
+    # Set all values
+    for my $key ( sort keys %{$instance_defaults} ) {
+
+        # Properties that aren't methods are bad?
+        my $sub = $instance->can($key);
+        die "No setter for feature '$key'" unless $sub;
+        $instance->$sub( $instance_defaults->{$key} );
+    }
+    return $instance;
+};
+
+our @EXPORT_OK = qw( $_new_with_defaults );
+
+BEGIN { *import = \&Exporter::import; }
 
 1;
 
@@ -20,10 +83,16 @@ Acme::Data::Dumper::Extensions - Experimental Enhancements to core Data::Dumper
 =head1 SYNOPSIS
 
   use Data::Dumper;
-  use Acme::Data::Dumper::Extensions qw/$new_with_defaults/;
+  use Acme::Data::Dumper::Extensions qw/$_new_with_defaults/;
 
-  my $instance = Data::Dumper->$new_with_defaults({ });
+  local $Data::Dumper::Indent = 5;
 
+  my $instance = Data::Dumper->$_new_with_defaults({ }); # Indent is still 2!
+
+  $instance =  Data::Dumper->$_new_with_defaults({
+    Indent => 4,         # Easier initalizer
+    UnknownKey => 1,     # Specify a key that doesn't exist? That's OK!... maybe >_>
+  });
 
 =head1 DESCRIPTION
 
@@ -33,3 +102,72 @@ It will likely be terrible because bolting on features after-the-fact its also
 pretty ugly.
 
 But its just a prototype.
+
+For some, it will serve more as a proof-of-concept for various interfaces until
+they get accepted into core.
+
+=head1 EXPORTS
+
+=head2 C<$_new_with_defaults>
+
+This is a prototype function for construcing a Data::Dumper instance without
+being prone to leak from other people using the global values.
+
+At the time of this writing, if you need perfect consistency from Data::Dumper
+in widely used code, you by necessity have to know every version of
+Data::Dumper that exists, and know what the default values are of various
+arguments, in order to revert them to your "known good" state if 3rd party
+code decides to locally change those values for their own purposes.
+
+Getting an instance of a Data::Dumper object before anyone tweaks those values
+would also work, but trying to bet on getting loaded and getting an instance
+before anyone else does is just foolhardy
+
+Additionally, due to how C<< ->Values >> works, having a global instance of
+Data::Dumper can lend itself to a memory leak and you have to take additional
+care to make sure you free values passed to it.
+
+=head3 Syntax
+
+The name used here is C<$_new_with_defauts> as this makes it straight forward
+to migrate code that uses this once its adopted, without needing to
+monkey-patch Data::Dumper itself.
+
+  Data::Dumper->$_new_with_defaults( ... )
+  Data::Dumper->new_with_defaults( ... )
+
+=head3 Arguments
+
+  # Using the defaults
+  $_new_with_defaults()
+
+  # Augmenting the defaults
+  new_with_defaults({ Name => value, Name => value });
+
+The approach I've taken here is to ignore the standard arguments to C<new>,
+because it wasn't clear to me how else to organise this with the existing
+alternative interfaces.
+
+Given there's an alternative way of passing the dump values, its suggested
+to just use those until this part of the design is sorted out:
+
+  $_new_with_defaults()->Values([ stuff, to, dump ])->Dump();
+
+=head3 Unrecognised Features
+
+I'm still not sure how to handle what happens when somebody passes the name
+of a feature which doesn't exist yet, but does in a future version.
+
+Ideally, calling C<$_new_with_defaults()> should give you the same results in
+perpetuity ( or at least, from the date this feature gets added )
+
+For now I think the best thing to do is die fatally if a feature that is
+requested can't be provided, as that will produce output other than is desired
+and violate output consistency as a result.
+
+This will just become a nightmare if somebody ever changes "The Default" for
+a I<new> feature wherein, users have to I<< Opt-B<Out> >>, causing an
+explosion on older versions where that feature didn't exist.
+
+This should be a hazard to never even consider changing the default behaviour.
+
