@@ -1,6 +1,8 @@
 use strict;
 use warnings;
 
+use Module::Metadata;
+
 sub MY::dist_basics {
     my ($self) = shift;
 
@@ -13,5 +15,7 @@ sub MY::dist_basics {
 }
 
 $main::MM_Args{test}{TESTS} .= " xt/*.t";
+$main::MM_Args{META_ADD}{provides} =
+  Module::Metadata->provides( dir => 'lib', version => 2 );
 
 1;
