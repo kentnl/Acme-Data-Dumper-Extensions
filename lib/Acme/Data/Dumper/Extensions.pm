@@ -55,7 +55,14 @@ our $_new_with_defaults = sub {
 
     # Validate and overwrite user defaults
     for my $key ( sort keys %{ $user_defaults || {} } ) {
-        die "Unknown feature '$key'" unless exists $DD_Defaults->{$key};
+        if ( not exists $DD_Defaults->{$key} ) {
+            my $guesskey = ucfirst( lc($key) );
+            my $dym =
+              exists $DD_Defaults->{$guesskey}
+              ? sprintf q[ (did you mean '%s'?)], $guesskey
+              : q[];
+            die sprintf "Unknown feature '%s'%s", $key, $dym;
+        }
         $instance_defaults->{$key} = $user_defaults->{$key};
     }
 
