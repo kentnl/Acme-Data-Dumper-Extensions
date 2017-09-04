@@ -111,7 +111,6 @@ Acme::Data::Dumper::Extensions - Experimental Enhancements to core Data::Dumper
 
   $instance =  Data::Dumper->$_new_with_defaults({
     Indent => 4,         # Easier initalizer
-    UnknownKey => 1,     # Specify a key that doesn't exist? That's OK!... maybe >_>
   });
 
 =head1 DESCRIPTION
