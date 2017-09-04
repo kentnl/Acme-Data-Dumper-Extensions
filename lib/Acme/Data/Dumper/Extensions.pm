@@ -16,6 +16,7 @@ use Exporter     ();
 my $DD_Defaults;
 
 BEGIN {
+    no warnings 'once';
     $DD_Defaults = {
         Bless     => q[bless],
         Deepcopy  => 0,
