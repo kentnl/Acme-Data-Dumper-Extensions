@@ -86,7 +86,7 @@ our $_DumpValues = sub {
     $names = [] unless defined $names;
 
     my (@out) = $self->Reset()->Names($names)->Values($values)->Dump;
-    $self->Reset()->Names([])->Values([]);
+    $self->Reset()->Names( [] )->Values( [] );
 
     return wantarray ? @out : join q[], @out;
 };
