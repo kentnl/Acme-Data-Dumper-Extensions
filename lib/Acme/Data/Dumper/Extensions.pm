@@ -70,7 +70,23 @@ our $_new_with_defaults = sub {
     return $instance;
 };
 
-our @EXPORT_OK = qw( $_new_with_defaults );
+our $_DumpValues = sub {
+    my ( $self, $values, $names ) = @_;
+
+    die "Expected array of values to dump" if not defined $values;
+    die "Dump values is not an array" unless q[ARRAY] eq ref $values;
+
+    my ( $orig_values, $orig_names ) = ( [ $self->Values ], [ $self->Names ] );
+
+    $names = $orig_names unless defined $names;
+
+    my (@out) = $self->Names($names)->Values($values)->Dump;
+    $self->Reset()->Names($orig_names)->Values($orig_values);
+
+    return wantarray ? @out : join q[], @out;
+};
+
+our @EXPORT_OK = qw( $_new_with_defaults $_DumpValues );
 
 BEGIN { *import = \&Exporter::import; }
 
@@ -139,10 +155,10 @@ monkey-patch Data::Dumper itself.
 =head3 Arguments
 
   # Using the defaults
-  $_new_with_defaults()
+  Data::Dumper->$_new_with_defaults()
 
   # Augmenting the defaults
-  new_with_defaults({ Name => value, Name => value });
+  Data::Dumper->$_new_with_defaults({ Name => value, Name => value });
 
 The approach I've taken here is to ignore the standard arguments to C<new>,
 because it wasn't clear to me how else to organise this with the existing
@@ -151,7 +167,11 @@ alternative interfaces.
 Given there's an alternative way of passing the dump values, its suggested
 to just use those until this part of the design is sorted out:
 
-  $_new_with_defaults()->Values([ stuff, to, dump ])->Dump();
+  Data::Dumper->$_new_with_defaults()->Values([ stuff, to, dump ])->Dump();
+
+Or use the other feature suggested in this module:
+
+  Data::Dumper->$_new_with_defaults()->$_DumpValues([ stuff, to, dump ]);
 
 =head3 Unrecognised Features
 
@@ -171,3 +191,42 @@ explosion on older versions where that feature didn't exist.
 
 This should be a hazard to never even consider changing the default behaviour.
 
+=head2 C<$_DumpValues>
+
+This function is a helper that does what people who maintain a long-lived
+C<Data::Dumper> instance generally desire: The ability to just set up an
+instance, and then call it an arbitrary number of times with arbitrary inputs
+and have it act without side effects.
+
+However, the current implementation of Data::Dumper is such that if you have
+an instance, you must B<first> store the data in the object, and B<then>
+dump it, which introduces fun problems with your data living longer than you
+intended it to.
+
+Currently, you also must call C<< ->Reset >> after dumping to reset the
+C<Seen> state.
+
+=head3 Syntax
+
+  # Dump array of values as a string
+  # Any values previously passed to ->Names() used
+  $instance->$_DumpValues( [ values ] );
+
+  # Dump array of values with predefined names
+  $instance->$_DumpValues( [ values, ... ], [ names, ... ]);
+
+=head3 Arguments
+
+The first argument (required) must be an C<ArrayRef> of values to dump.
+
+This value will B<ALWAYS> be used instead of any instances of C<Values> passed
+earlier. Any values previously passed to C<Values> will be preserved.
+
+The second (optional) argument is an C<ArrayRef> of names to use for values.
+
+If this option is omitted, an C<< ->Names >> is passed earlier to the same
+instance, those values will be used.
+
+If this option is present, prior values passed to C<< ->Names >> will be
+ignored, and the passed values used instead. ( While preserving the internal
+state of C<< ->Names >> )
