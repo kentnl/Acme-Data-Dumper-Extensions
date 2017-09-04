@@ -19,6 +19,7 @@ unless ( exists $manifest{$MANIFEST} ) {
 
 for my $file ( split qq/\0/, qx/git ls-files -z/ ) {
     next if exists $manifest{$file};
+    next if $file eq q[README.pod];
     warn "Adding to $MANIFEST: $file\n";
     $manifest{$file} = undef;
 }
