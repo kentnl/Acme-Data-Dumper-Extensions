@@ -83,12 +83,10 @@ our $_DumpValues = sub {
     die "Expected array of values to dump" if not defined $values;
     die "Dump values is not an array" unless q[ARRAY] eq ref $values;
 
-    my ( $orig_values, $orig_names ) = ( [ $self->Values ], [ $self->Names ] );
+    $names = [] unless defined $names;
 
-    $names = $orig_names unless defined $names;
-
-    my (@out) = $self->Names($names)->Values($values)->Dump;
-    $self->Reset()->Names($orig_names)->Values($orig_values);
+    my (@out) = $self->Reset()->Names($names)->Values($values)->Dump;
+    $self->Reset()->Names([])->Values([]);
 
     return wantarray ? @out : join q[], @out;
 };
@@ -213,10 +211,18 @@ intended it to.
 Currently, you also must call C<< ->Reset >> after dumping to reset the
 C<Seen> state.
 
+This function is designed to be used atomically. Any pre-existing variable
+state (eg: C<Names>, C<Values>, C<Seen> ) should be thouroughly ignored, and
+any of those values will be left in a "reset" state after using this function.
+
+It is thus inadvisable to combine use of this function with others.
+
+If you need complex behaviours provided by the more advanced interfaces, its
+recommended to use those instead.
+
 =head3 Syntax
 
   # Dump array of values as a string
-  # Any values previously passed to ->Names() used
   $instance->$_DumpValues( [ values ] );
 
   # Dump array of values with predefined names
@@ -231,9 +237,6 @@ earlier. Any values previously passed to C<Values> will be preserved.
 
 The second (optional) argument is an C<ArrayRef> of names to use for values.
 
-If this option is omitted, an C<< ->Names >> is passed earlier to the same
-instance, those values will be used.
+If this option is omitted, it will behave as if you'd passed C<[]>.
 
-If this option is present, prior values passed to C<< ->Names >> will be
-ignored, and the passed values used instead. ( While preserving the internal
-state of C<< ->Names >> )
+If this option is present, passed values used instead.

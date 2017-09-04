@@ -34,8 +34,8 @@ use Acme::Data::Dumper::Extensions qw/ $_new_with_defaults $_DumpValues /;
 
     $local_plan -= like $rval, qr/xxx/, "DumpValues gives new values";
 
-    $local_plan -= like + ( join q[], $bad_instance->Values ), qr/[ab]/,
-      "Instance values unchanged";
+    $local_plan -=
+      is( scalar $bad_instance->Values, 0, "Instance values wiped" );
 
     $local_plan == 0 or diag explain [ $rval, $bad_instance ];
 
@@ -48,11 +48,11 @@ use Acme::Data::Dumper::Extensions qw/ $_new_with_defaults $_DumpValues /;
 
         my $local_plan = 2;
 
-        $local_plan -= like $rval, qr/first/,
-          "DumpValues preserves value names by default";
+        $local_plan -= unlike $rval, qr/first/,
+          "DumpValues ignores preset value names";
 
-        $local_plan -= like + ( join q[], $bad_instance->Names ), qr/first/,
-          "Instance names unchanged";
+        $local_plan -= unlike + ( join q[], $bad_instance->Names ), qr/first/,
+          "Instance names wiped";
 
         $local_plan == 0 or diag explain [ $rval, $bad_instance ];
     }
@@ -64,8 +64,8 @@ use Acme::Data::Dumper::Extensions qw/ $_new_with_defaults $_DumpValues /;
 
         $local_plan -= like $rval, qr/alpha/, "DumpValues uses passed names";
 
-        $local_plan -= like + ( join q[], $bad_instance->Names ), qr/first/,
-          "Instance names unchanged";
+        $local_plan -=
+          is( scalar $bad_instance->Names, 0, "Instance names wiped" );
 
         $local_plan == 0 or diag explain [ $rval, $bad_instance ];
 
