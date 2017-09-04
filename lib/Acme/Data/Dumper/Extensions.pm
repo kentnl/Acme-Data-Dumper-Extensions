@@ -30,7 +30,7 @@ BEGIN {
         Sortkeys  => 0,
         Terse     => 0,
         Toaster   => q[],
-        Useperl   => 0,
+        Useperl   => !( grep $_ eq 'Data::Dumper', @DynaLoader::dl_modules ),
         Useqq     => 0,
         Varname   => q[VAR],
     };
