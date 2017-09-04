@@ -26,7 +26,6 @@ BEGIN {
         Pad       => q[],
         Pair      => q[ => ],
         Purity    => 0,
-        Purity    => 0,
         Quotekeys => 1,
         Sortkeys  => 0,
         Terse     => 0,
