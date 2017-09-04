@@ -4,7 +4,7 @@ use warnings;
 
 package Acme::Data::Dumper::Extensions;
 
-our $VERSION = '0.001000';
+our $VERSION = '0.001001';
 
 # ABSTRACT: Experimental Enhancements to core Data::Dumper
 
