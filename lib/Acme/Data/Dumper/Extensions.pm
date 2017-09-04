@@ -149,7 +149,7 @@ care to make sure you free values passed to it.
 
 =head3 Syntax
 
-The name used here is C<$_new_with_defauts> as this makes it straight forward
+The name used here is C<$_new_with_defaults> as this makes it straight forward
 to migrate code that uses this once its adopted, without needing to
 monkey-patch Data::Dumper itself.
 
